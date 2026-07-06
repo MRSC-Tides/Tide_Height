@@ -4,9 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRSC Tide & Pressure Dashboard</title>
-    <!-- Load Chart.js and the dependencies for time scaling -->
+    
+    <!-- Core Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- CRITICAL FIX: Load base date-fns library first, then the Chart.js adapter -->
     <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
+    
     <style>
         body {
             margin: 0;
@@ -14,7 +19,7 @@
             width: 100vw;
             height: 100vh;
             display: flex;
-            flex-direction: column; /* Stack layout vertically */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             background-color: #f8f9fa;
@@ -23,11 +28,10 @@
             box-sizing: border-box;
         }
 
-        /* Status header displaying the latest reading matching the blue line */
         .status-header {
             font-size: 1.25rem;
             font-weight: bold;
-            color: #007bff; /* Color matched to Tide Height Line */
+            color: #007bff;
             margin-bottom: 10px;
             text-align: center;
             padding: 0 15px;
@@ -37,15 +41,14 @@
 
         @media (max-width: 480px) {
             .status-header {
-                font-size: 1rem; /* Marginally downscale text on small mobile screens */
+                font-size: 1rem;
             }
         }
 
-        /* Fully responsive container that adapts instantly on device rotation */
         .chart-container {
             position: relative;
             width: 95vw;
-            height: 78vh; /* Adjusted slightly to make room for the header */
+            height: 78vh;
             max-width: 1200px;
             background: white;
             padding: 15px;
@@ -62,7 +65,6 @@
 </head>
 <body>
 
-    <!-- Dynamic Header Area -->
     <div class="status-header" id="latest-reading">MRSC Tide Height: Loading...</div>
 
     <div class="chart-container">
@@ -71,12 +73,11 @@
 
     <script>
         // --- CONFIGURATION ---
-        const CHANNEL_ID = ' 3239925'; 
+        const CHANNEL_ID = '3239925'; 
         const READ_API_KEY = '2380EH2E5H0RPTXU'; // Leave empty string '' if your channel is public
         
         let tsChart;
 
-        // Update the header text with the absolute newest data point
         function updateHeader(latestFeed) {
             const headerDiv = document.getElementById('latest-reading');
             if (!latestFeed) {
@@ -91,7 +92,6 @@
             headerDiv.innerText = `MRSC Tide Height: ${val1}m at ${timeString}`;
         }
 
-        // Fetch exactly 6 hours of data from ThingSpeak
         async function fetchThingSpeakData() {
             let url = `https://thingspeak.com{CHANNEL_ID}/feeds.json?minutes=360`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
@@ -100,7 +100,11 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                // Map the feeds into data points containing the absolute timestamp and value
+                if (!data.feeds || data.feeds.length === 0) {
+                    console.warn("No feeds returned from ThingSpeak API.");
+                    return;
+                }
+
                 const tideData = data.feeds.map(feed => ({
                     x: new Date(feed.created_at),
                     y: parseFloat(feed.field1)
@@ -111,34 +115,27 @@
                     y: parseFloat(feed.field2)
                 }));
 
-                // Update the text banner using the last item in the feed array
-                if (data.feeds && data.feeds.length > 0) {
-                    updateHeader(data.feeds[data.feeds.length - 1]);
-                }
-
+                updateHeader(data.feeds[data.feeds.length - 1]);
                 updateChart(tideData, pressureData);
             } catch (error) {
                 console.error("Error fetching data from ThingSpeak:", error);
             }
         }
 
-        // Initialize or dynamically update the chart
         function updateChart(tideData, pressureData) {
-            // Lock the visible timeline boundaries to exactly a 6-hour moving window
             const now = new Date();
             const sixHoursAgo = new Date(now.getTime() - (6 * 60 * 60 * 1000));
 
             if (tsChart) {
-                // Shift windows and update arrays seamlessly without clear flashes
+                // FIXED: Explicitly target separate index dataset pointers
                 tsChart.options.scales.x.min = sixHoursAgo;
                 tsChart.options.scales.x.max = now;
-                tsChart.data.datasets.data = tideData;
-                tsChart.data.datasets.data = pressureData;
+                tsChart.data.datasets[0].data = tideData;
+                tsChart.data.datasets[1].data = pressureData;
                 tsChart.update();
                 return;
             }
 
-            // Define canvas layout parameters on initial site load
             const ctx = document.getElementById('multiFieldChart').getContext('2d');
             tsChart = new Chart(ctx, {
                 type: 'line',
@@ -166,15 +163,15 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false, // Vital for instant adjustment between portrait/landscape
+                    maintainAspectRatio: false,
                     scales: {
                         x: {
                             type: 'time',
-                            min: sixHoursAgo, // Crops data older than 6 hours out on the left edge
-                            max: now,        // Anchors the right edge of the chart to the current moment
+                            min: sixHoursAgo,
+                            max: now,
                             time: {
                                 unit: 'hour',
-                                stepSize: 1, // Ensures vertical gridlines are generated on the hour mark
+                                stepSize: 1,
                                 displayFormats: {
                                     hour: 'HH:mm'
                                 }
@@ -196,14 +193,12 @@
                             title: { 
                                 display: true, 
                                 text: 'Tide Height (m)',
-                                color: '#007bff', // Matches the Blue plot line
-                                font: {
-                                    weight: 'bold'
-                                }
+                                color: '#007bff',
+                                font: { weight: 'bold' }
                             },
                             ticks: {
                                 stepSize: 0.25,
-                                color: '#007bff' // Matches label numbers to the plot color
+                                color: '#007bff'
                             }
                         },
                         yPressure: {
@@ -214,31 +209,23 @@
                             title: { 
                                 display: true, 
                                 text: 'Pressure (hPa)',
-                                color: '#dc3545', // Matches the Red plot line
-                                font: {
-                                    weight: 'bold'
-                                }
+                                color: '#dc3545',
+                                font: { weight: 'bold' }
                             },
                             ticks: {
                                 stepSize: 10,
-                                color: '#dc3545' // Matches label numbers to the plot color
+                                color: '#dc3545'
                             },
-                            grid: { 
-                                drawOnChartArea: false 
-                            }
+                            grid: { drawOnChartArea: false }
                         }
                     }
                 }
             });
         }
 
-        // Run data pipeline immediately on load
         fetchThingSpeakData();
-
-        // Query API strictly every 30 seconds
         setInterval(fetchThingSpeakData, 30000);
 
-        // Instantly resize layout if the user flips their smartphone or tablet orientation
         window.addEventListener('resize', () => {
             if(tsChart) { tsChart.resize(); }
         });
