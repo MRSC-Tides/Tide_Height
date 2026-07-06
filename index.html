@@ -127,7 +127,7 @@
             const sixHoursAgo = new Date(now.getTime() - (6 * 60 * 60 * 1000));
 
             if (tsChart) {
-                // FIXED: Explicitly target separate index dataset pointers
+                // FIXED: Explicitly target the dataset array indexes [0] and [1]
                 tsChart.options.scales.x.min = sixHoursAgo;
                 tsChart.options.scales.x.max = now;
                 tsChart.data.datasets[0].data = tideData;
@@ -135,6 +135,7 @@
                 tsChart.update();
                 return;
             }
+
 
             const ctx = document.getElementById('multiFieldChart').getContext('2d');
             tsChart = new Chart(ctx, {
