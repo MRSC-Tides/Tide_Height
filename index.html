@@ -178,11 +178,12 @@
                     ]
                 },
                 options: {
-                    responsive: true,
+                    responsive: false,
                     maintainAspectRatio: false,
-                    layout: {
-                        padding: {
-                            bottom: 10 // Pushes the graphic timeline up slightly to give the date room
+                    // THIS IS THE CONFIGURATION BLOCK FOR THE TOP LEGENDS:
+                    plugins: {
+                        legend: {
+                            display: true // Setting this to true makes the Tide and Pressure boxes visible again
                         }
                     },
                     scales: {
