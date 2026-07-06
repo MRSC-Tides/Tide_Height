@@ -109,7 +109,7 @@
 
         async function fetchThingSpeakData() {
             // EXACT URL STRING FORMAT
-            let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=720`;
+            let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=720&nocache=${Date.now()}`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
 
             try {
@@ -275,8 +275,12 @@
         fetchThingSpeakData();
         setInterval(fetchThingSpeakData, 30000);
 
+        // Clear layout and run a fresh cache-free API request instantly when orientation changes
         window.addEventListener('resize', () => {
-            if(tsChart) { tsChart.resize(); }
+            if (tsChart) { 
+                tsChart.resize(); 
+                fetchThingSpeakData(); // Instantly fetches fresh non-cached data on rotation
+            }
         });
     </script>
 </body>
