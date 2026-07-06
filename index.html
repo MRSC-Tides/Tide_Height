@@ -5,11 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRSC Tide & Pressure Dashboard</title>
     
-    <!-- Core Chart.js Library -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- CRITICAL FIX: Load base date-fns library first, then the Chart.js adapter -->
-    <script src="https://jsdelivr.net"></script>
     <script src="https://jsdelivr.net"></script>
     
     <style>
@@ -74,7 +69,7 @@
     <script>
         // --- CONFIGURATION ---
         const CHANNEL_ID = '3239925'; 
-        const READ_API_KEY = '2380EH2E5H0RPTXU'; // Leave empty string '' if your channel is public
+        const READ_API_KEY = '2380EH2E5H0RPTXU'; 
         
         let tsChart;
 
@@ -93,6 +88,7 @@
         }
 
         async function fetchThingSpeakData() {
+            // EXACT URL STRING FORMAT
             let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=360`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
 
@@ -127,7 +123,7 @@
             const sixHoursAgo = new Date(now.getTime() - (6 * 60 * 60 * 1000));
 
             if (tsChart) {
-                // FIXED: Explicitly target the dataset array indexes [0] and [1]
+                // EXPLICIT INDEX ARRAYS TO PREVENT INTERNALS CRASHING
                 tsChart.options.scales.x.min = sixHoursAgo;
                 tsChart.options.scales.x.max = now;
                 tsChart.data.datasets[0].data = tideData;
@@ -135,7 +131,6 @@
                 tsChart.update();
                 return;
             }
-
 
             const ctx = document.getElementById('multiFieldChart').getContext('2d');
             tsChart = new Chart(ctx, {
