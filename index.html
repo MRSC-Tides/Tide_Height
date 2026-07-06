@@ -93,7 +93,7 @@
         }
 
         async function fetchThingSpeakData() {
-            let url = `https://thingspeak.com{CHANNEL_ID}/feeds.json?minutes=360`;
+            let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=360`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
 
             try {
