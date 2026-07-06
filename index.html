@@ -72,6 +72,11 @@
         const READ_API_KEY = '2380EH2E5H0RPTXU'; 
         
         let tsChart;
+        
+        // CRITICAL WORKAROUND: Force Chart.js to register its internal time scaling tools
+        if (typeof Chart !== 'undefined' && Chart._adapters) {
+            Chart.register(ChartjsAdapterDateFns);
+        }        
 
         function updateHeader(latestFeed) {
             const headerDiv = document.getElementById('latest-reading');
