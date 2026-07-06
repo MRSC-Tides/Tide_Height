@@ -53,6 +53,16 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             box-sizing: border-box;
         }
+        .date-footer {
+            width: 95vw;
+            max-width: 1200px;
+            margin-top: 5px;
+            text-align: right; /* Forces text to align under the right edge */
+            font-size: 1rem;
+            color: #333333;
+            font-family: sans-serif;
+            font-weight: bold; /* Individual bold configuration */
+        }
 
         canvas {
             width: 100% !important;
@@ -67,7 +77,9 @@
     <div class="chart-container">
         <canvas id="multiFieldChart"></canvas>
     </div>
-
+    
+    <div class="date-footer" id="current-date-display"></div>
+    
     <script>
         // --- CONFIGURATION ---
         const CHANNEL_ID = '3239925'; 
@@ -77,6 +89,7 @@
 
         function updateHeader(latestFeed) {
             const headerDiv = document.getElementById('latest-reading');
+            const dateDiv = document.getElementById('current-date-display');
             if (!latestFeed) {
                 headerDiv.innerText = "MRSC Tide Height: No data available";
                 return;
@@ -87,6 +100,11 @@
             const timeString = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             headerDiv.innerText = `MRSC Tide Height: ${val1}m at ${timeString}`;
+
+            // DYNAMIC 3-PART BLOCK DATE INJECTOR (Month, Day, Year format)
+            const options = { month: 'short', day: '2-digit', year: 'numeric' };
+            dateDiv.innerText = timeObj.toLocaleDateString('en-US', options);
+
         }
 
         async function fetchThingSpeakData() {
@@ -189,7 +207,7 @@
                                 }
                             },
                             title: {
-                                display: true,
+                                display: false,
                                 text: 'Time',
                                 size: 16,
                                 weight: 'bold'
