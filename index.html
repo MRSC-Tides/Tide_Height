@@ -89,7 +89,7 @@
 
         async function fetchThingSpeakData() {
             // EXACT URL STRING FORMAT
-            let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=360`;
+            let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=720`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
 
             try {
@@ -120,11 +120,11 @@
 
         function updateChart(tideData, pressureData) {
             const now = new Date();
-            const sixHoursAgo = new Date(now.getTime() - (6 * 60 * 60 * 1000));
+            const twelveHoursAgo = new Date(now.getTime() - (12 * 60 * 60 * 1000));
 
             if (tsChart) {
                 // EXPLICIT INDEX ARRAYS TO PREVENT INTERNALS CRASHING
-                tsChart.options.scales.x.min = sixHoursAgo;
+                tsChart.options.scales.x.min = twelveHoursAgo;
                 tsChart.options.scales.x.max = now;
                 tsChart.data.datasets[0].data = tideData;
                 tsChart.data.datasets[1].data = pressureData;
@@ -168,7 +168,7 @@
                     scales: {
                         x: {
                             type: 'time',
-                            min: sixHoursAgo,
+                            min: twelveHoursAgo,
                             max: now,
                             time: {
                                 unit: 'hour',
