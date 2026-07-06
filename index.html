@@ -54,14 +54,14 @@
             box-sizing: border-box;
         }
         .date-footer {
-            width: 95vw;
-            max-width: 1200px;
-            margin-top: 5px;
-            text-align: right; /* Forces text to align under the right edge */
-            font-size: 1rem;
+            position: absolute;
+            bottom: 5px;   /* Anchors it just above the bottom edge */
+            right: 15px;   /* Aligns it perfectly with the right scale numbers */
+            font-size: 0.9rem;
             color: #333333;
             font-family: sans-serif;
-            font-weight: bold; /* Individual bold configuration */
+            font-weight: bold; /* Bold styling */
+            z-index: 10;   /* Ensures the text stays cleanly visible on top of background lines */
         }
 
         canvas {
@@ -76,9 +76,9 @@
 
     <div class="chart-container">
         <canvas id="multiFieldChart"></canvas>
+        <!-- The date is now nested inside the chart box -->
+        <div class="date-footer" id="current-date-display"></div>
     </div>
-    
-    <div class="date-footer" id="current-date-display"></div>
     
     <script>
         // --- CONFIGURATION ---
@@ -180,9 +180,9 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false // This completely hides the two top legend boxes
+                    layout: {
+                        padding: {
+                            bottom: 10 // Pushes the graphic timeline up slightly to give the date room
                         }
                     },
                     scales: {
