@@ -42,16 +42,33 @@
             }
         }
 
+        /* Adjusted height to fill the screen completely now that the header space is removed */
         .chart-container {
             position: relative;
             width: 95vw;
-            height: 78vh;
+            height: 85vh; /* Bumped up from 78vh to give you a significantly larger graph area */
             max-width: 1200px;
             background: white;
             padding: 15px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             box-sizing: border-box;
+        }
+
+        .status-header {
+            position: absolute;
+            top: 10px;    /* Anchors it cleanly at the top edge of the white box */
+            left: 50%;    /* Centers it horizontally */
+            transform: translateX(-50%);
+            font-size: 1.4rem;
+            font-family: "Arial Black", "Impact", sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #000000;
+            text-align: center;
+            width: 90%;
+            box-sizing: border-box;
+            z-index: 10;  /* Keeps text layered safely on top of background grids */
         }
         .date-footer {
             position: absolute;
@@ -75,8 +92,9 @@
     <div class="status-header" id="latest-reading">MRSC Tide Height: Loading...</div>
 
     <div class="chart-container">
+        <!-- The main title is now nested inside the chart box at the very top -->
+        <div class="status-header" id="latest-reading">MRSC Tide Height: Loading...</div>
         <canvas id="multiFieldChart"></canvas>
-        <!-- The date is now nested inside the chart box -->
         <div class="date-footer" id="current-date-display"></div>
     </div>
     
@@ -180,7 +198,12 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    // THIS IS THE CONFIGURATION BLOCK FOR THE TOP LEGENDS:
+                    layout: {
+                        padding: {
+                            top: 40,   // Pushes the graphic grid down to leave clean breathing room for your main title
+                            bottom: 10 // Keeps padding room for your bottom-right date stamp
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false // Setting this to true makes the Tide and Pressure boxes visible again
