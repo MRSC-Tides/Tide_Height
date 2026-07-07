@@ -193,6 +193,20 @@
                         }
                     ]
                 },
+                plugins: [{
+                    id: 'topBorderFix',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, chartArea: { left, top, right } } = chart;
+                        ctx.save();
+                        ctx.strokeStyle = '#000000'; // Match the thick black line
+                        ctx.lineWidth = 3;           // Match the 3px thickness
+                        ctx.beginPath();
+                        ctx.moveTo(left, top);
+                        ctx.lineTo(right, top);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -207,20 +221,6 @@
                             display: false // Setting this to true makes the Tide and Pressure boxes visible again
                         }
                     },
-                    plugins: [{
-                        id: 'topBorderFix',
-                        afterDatasetsDraw(chart) {
-                            const { ctx, chartArea: { left, top, right } } = chart;
-                            ctx.save();
-                            ctx.strokeStyle = '#000000'; // Match the thick black look
-                            ctx.lineWidth = 2;           // Match the 3px thickness
-                            ctx.beginPath();
-                            ctx.moveTo(left, top);
-                            ctx.lineTo(right, top);
-                            ctx.stroke();
-                            ctx.restore();
-                        }
-                    }],
                     scales: {
                         x: {
                             type: 'time',
