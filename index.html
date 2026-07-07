@@ -9,12 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     
     <style>
-    canvas {
-          width: 100% !important;
-          height: 100% !important;
-          /* Adds a matching 3px black line precisely along the top of the canvas */
-          border-top: 2px solid #000000; 
-    }
         body {
             margin: 0;
             padding: 0;
@@ -213,6 +207,20 @@
                             display: false // Setting this to true makes the Tide and Pressure boxes visible again
                         }
                     },
+                    plugins: [{
+                        id: 'topBorderFix',
+                        afterDatasetsDraw(chart) {
+                            const { ctx, chartArea: { left, top, right } } = chart;
+                            ctx.save();
+                            ctx.strokeStyle = '#000000'; // Match the thick black look
+                            ctx.lineWidth = 2;           // Match the 3px thickness
+                            ctx.beginPath();
+                            ctx.moveTo(left, top);
+                            ctx.lineTo(right, top);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    }],
                     scales: {
                         x: {
                             type: 'time',
@@ -307,6 +315,7 @@
                             grid: { drawOnChartArea: false }
                         }
                     }
+                    
                 }
             });
         }
