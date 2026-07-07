@@ -212,6 +212,10 @@
                             type: 'time',
                             min: twelveHoursAgo,
                             max: now,
+                            border: {
+                                color: '#000000', // Thick outer bottom line
+                                width: 3
+                            },
                             time: {
                                 unit: 'hour',
                                 stepSize: 1,
@@ -243,7 +247,11 @@
                             type: 'linear',
                             position: 'left',
                             min: 3,         
-                            max: 5.5,       
+                            max: 5.5,
+                            border: {
+                                color: '#000000', // Thick outer left line
+                                width: 3
+                            },
                             title: { 
                                 display: true, 
                                 text: 'Tide Height (m)',
@@ -269,7 +277,11 @@
                             type: 'linear',
                             position: 'right',
                             min: 950,       
-                            max: 1050,      
+                            max: 1050,
+                            border: {
+                                color: '#000000', // Thick outer right line
+                                width: 3
+                            },
                             title: { 
                                 display: true, 
                                 text: 'Pressure (hPa)',
