@@ -21,7 +21,7 @@
             background-color: #f8f9fa;
             font-family: sans-serif;
             overflow: hidden;
-            box-sizing: -box;
+            box-sizing: border-box;
         }
 
         .status-header {
@@ -33,7 +33,7 @@
             text-align: center;
             padding: 0 15px;
             width: 100%;
-            box-sizing: -box;
+            box-sizing: border-box;
         }
 
         @media (max-width: 480px) {
@@ -42,23 +42,22 @@
             }
         }
 
-        /* Adjusted height to fill the screen completely now that the header space is removed */
         .chart-container {
             position: relative;
             width: 95vw;
-            height: 85vh; /* Bumped up from 78vh to give you a significantly larger graph area */
+            height: 85vh;
             max-width: 1200px;
             background: white;
             padding: 15px;
-            -radius: 12px;
+            border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            box-sizing: -box;
+            box-sizing: border-box;
         }
 
         .status-header {
             position: absolute;
-            top: 10px;    /* Anchors it cleanly at the top edge of the white box */
-            left: 50%;    /* Centers it horizontally */
+            top: 10px;
+            left: 50%;
             transform: translateX(-50%);
             font-size: 1.4rem;
             font-family: "Arial Black", "Impact", sans-serif;
@@ -67,18 +66,18 @@
             color: #000000;
             text-align: center;
             width: 90%;
-            box-sizing: -box;
-            z-index: 10;  /* Keeps text layered safely on top of background grids */
+            box-sizing: border-box;
+            z-index: 10;
         }
         .date-footer {
             position: absolute;
-            bottom: 5px;   /* Anchors it just above the bottom edge */
-            right: 15px;   /* Aligns it perfectly with the right scale numbers */
+            bottom: 5px;
+            right: 15px;
             font-size: 0.9rem;
             color: #333333;
             font-family: sans-serif;
-            font-weight: bold; /* Bold styling */
-            z-index: 10;   /* Ensures the text stays cleanly visible on top of background lines */
+            font-weight: bold;
+            z-index: 10;
         }
 
         canvas {
@@ -90,7 +89,6 @@
 <body>
 
     <div class="chart-container">
-        <!-- The main title is now nested inside the chart box at the very top -->
         <div class="status-header" id="latest-reading">MRSC Tide Height: Loading...</div>
         <canvas id="multiFieldChart"></canvas>
         <div class="date-footer" id="current-date-display"></div>
@@ -103,28 +101,39 @@
         
         let tsChart;
 
-        function updateHeader(latestFeed) {
+        // Calculates a 3-point rolling average
+        function calculateRollingAverage(data, windowSize = 3) {
+            return data.map((point, index, array) => {
+                const start = Math.max(0, index - windowSize + 1);
+                const subset = array.slice(start, index + 1);
+                const sum = subset.reduce((acc, curr) => acc + curr.y, 0);
+                
+                return {
+                    x: point.x,
+                    y: sum / subset.length
+                };
+            });
+        }
+
+        function updateHeader(latestSmoothedPoint) {
             const headerDiv = document.getElementById('latest-reading');
             const dateDiv = document.getElementById('current-date-display');
-            if (!latestFeed) {
+            if (!latestSmoothedPoint) {
                 headerDiv.innerText = "MRSC Tide Height: No data available";
                 return;
             }
 
-            const val1 = parseFloat(latestFeed.field1).toFixed(2);
-            const timeObj = new Date(latestFeed.created_at);
+            const val1 = latestSmoothedPoint.y.toFixed(2);
+            const timeObj = latestSmoothedPoint.x;
             const timeString = timeObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             headerDiv.innerText = `MRSC Tide Height: ${val1}m at ${timeString}`;
 
-            // DYNAMIC 3-PART BLOCK DATE INJECTOR (Month, Day, Year format)
             const options = { month: 'short', day: '2-digit', year: 'numeric' };
             dateDiv.innerText = timeObj.toLocaleDateString('en-US', options);
-
         }
 
         async function fetchThingSpeakData() {
-            // EXACT URL STRING FORMAT
             let url = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?minutes=720&nocache=${Date.now()}`;
             if(READ_API_KEY) { url += `&api_key=${READ_API_KEY}`; }
 
@@ -137,18 +146,28 @@
                     return;
                 }
 
-                const tideData = data.feeds.map(feed => ({
-                    x: new Date(feed.created_at),
-                    y: parseFloat(feed.field1)
-                }));
+                // 1. Parse raw tide data
+                const rawTideData = data.feeds
+                    .filter(feed => feed.field1 !== null && feed.field1 !== undefined)
+                    .map(feed => ({
+                        x: new Date(feed.created_at),
+                        y: parseFloat(feed.field1)
+                    }));
 
-                const pressureData = data.feeds.map(feed => ({
-                    x: new Date(feed.created_at),
-                    y: parseFloat(feed.field2)
-                }));
+                // 2. Smooth the tide data with 3-point rolling average
+                const smoothedTideData = calculateRollingAverage(rawTideData, 3);
 
-                updateHeader(data.feeds[data.feeds.length - 1]);
-                updateChart(tideData, pressureData);
+                // 3. Pressure data remains unsmoothed
+                const pressureData = data.feeds
+                    .filter(feed => feed.field2 !== null && feed.field2 !== undefined)
+                    .map(feed => ({
+                        x: new Date(feed.created_at),
+                        y: parseFloat(feed.field2)
+                    }));
+
+                // Update the header with the latest smoothed point
+                updateHeader(smoothedTideData[smoothedTideData.length - 1]);
+                updateChart(smoothedTideData, pressureData);
             } catch (error) {
                 console.error("Error fetching data from ThingSpeak:", error);
             }
@@ -159,7 +178,6 @@
             const twelveHoursAgo = new Date(now.getTime() - (12 * 60 * 60 * 1000));
 
             if (tsChart) {
-                // EXPLICIT INDEX ARRAYS TO PREVENT INTERNALS CRASHING
                 tsChart.options.scales.x.min = twelveHoursAgo;
                 tsChart.options.scales.x.max = now;
                 tsChart.data.datasets[0].data = tideData;
@@ -198,8 +216,8 @@
                     afterDatasetsDraw(chart) {
                         const { ctx, chartArea: { left, top, right } } = chart;
                         ctx.save();
-                        ctx.strokeStyle = '#000000'; // Match the thick black line
-                        ctx.lineWidth = 2;           // Match the 2px thickness
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = 2;
                         ctx.beginPath();
                         ctx.moveTo(left, top);
                         ctx.lineTo(right, top);
@@ -212,13 +230,13 @@
                     maintainAspectRatio: false,
                     layout: {
                         padding: {
-                            top: 40,   // Pushes the graphic grid down to leave clean breathing room for your main title
-                            bottom: 10 // Keeps padding room for your bottom-right date stamp
+                            top: 40,
+                            bottom: 10
                         }
                     },
                     plugins: {
                         legend: {
-                            display: false // Setting this to true makes the Tide and Pressure boxes visible again
+                            display: false
                         }
                     },
                     scales: {
@@ -227,7 +245,7 @@
                             min: twelveHoursAgo,
                             max: now,
                             border: {
-                                color: '#000000', // Thick outer bottom line
+                                color: '#000000',
                                 width: 2
                             },
                             time: {
@@ -247,10 +265,7 @@
                                 }
                             },
                             title: {
-                                display: false,
-                                text: 'Time',
-                                size: 16,
-                                weight: 'bold'
+                                display: false
                             },
                             grid: {
                                 lineWidth: 2,
@@ -263,20 +278,17 @@
                             min: 3,         
                             max: 5.5,
                             border: {
-                                color: '#000000', // Thick outer left line
+                                color: '#000000',
                                 width: 2
                             },
                             title: { 
                                 display: true, 
                                 text: 'Tide Height (m)',
                                 color: '#007bff',
-                                font: { weight: 'bold',
-                                      size: 16
-                                },
-                                grid: {
-                                    lineWidth: 2,
-                                    color: 'rgba(0,0,0,0.15)'
-                                }                                
+                                font: { 
+                                    weight: 'bold',
+                                    size: 16
+                                }
                             },
                             ticks: {
                                 stepSize: 0.25,
@@ -285,6 +297,10 @@
                                     size: 16,
                                     weight: 'bold'
                                 }
+                            },
+                            grid: {
+                                lineWidth: 2,
+                                color: 'rgba(0,0,0,0.15)'
                             }
                         },
                         yPressure: {
@@ -293,15 +309,16 @@
                             min: 950,       
                             max: 1050,
                             border: {
-                                color: '#000000', // Thick outer right line
+                                color: '#000000',
                                 width: 2
                             },
                             title: { 
                                 display: true, 
                                 text: 'Pressure (hPa)',
                                 color: '#dc3545',
-                                font: { weight: 'bold',
-                                      size: 16
+                                font: { 
+                                    weight: 'bold',
+                                    size: 16
                                 }
                             },
                             ticks: {
@@ -315,7 +332,6 @@
                             grid: { drawOnChartArea: false }
                         }
                     }
-                    
                 }
             });
         }
@@ -323,11 +339,10 @@
         fetchThingSpeakData();
         setInterval(fetchThingSpeakData, 30000);
 
-        // Clear layout and run a fresh cache-free API request instantly when orientation changes
         window.addEventListener('resize', () => {
             if (tsChart) { 
                 tsChart.resize(); 
-                fetchThingSpeakData(); // Instantly fetches fresh non-cached data on rotation
+                fetchThingSpeakData();
             }
         });
     </script>
